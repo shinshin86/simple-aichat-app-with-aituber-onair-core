@@ -19,7 +19,11 @@ import {
   MODEL_CLAUDE_3_5_HAIKU,
   MODEL_CLAUDE_3_5_SONNET,
   MODEL_CLAUDE_3_7_SONNET,
+  ToolDefinition,
 } from '@aituber-onair/core';
+
+// when use MCP, uncomment the following line
+// import { createMcpToolHandler } from './mcpClient';
 
 type BaseMessage = { id: string; role: 'user' | 'assistant' };
 type TextMessage = BaseMessage & { kind: 'text'; content: string };
@@ -59,6 +63,34 @@ const claudeModels = [
   MODEL_CLAUDE_3_5_SONNET,
   MODEL_CLAUDE_3_7_SONNET,
 ];
+
+// tool definition
+const randomIntTool: ToolDefinition<{ max: number }> = {
+  name: 'randomInt',
+  description:
+    'Return a random integer from 0 (inclusive) up to, but not including, `max`. If `max` is omitted the default upper‑bound is 100.',
+  parameters: {
+    type: 'object',
+    properties: {
+      max: {
+        type: 'integer',
+        description: 'Exclusive upper bound for the random integer',
+        minimum: 1,
+      },
+    },
+    required: ['max'],
+  },
+};
+
+// tool handler
+const randomIntHandler = async ({ max }: { max: number }) => {
+  return Math.floor(Math.random() * max).toString();
+};
+
+// mcp tool handler
+/*
+const randomIntHandler = createMcpToolHandler<{ max: number }>('randomInt');
+*/
 
 const App: React.FC = () => {
   const idCounter = useRef(0);
@@ -148,6 +180,7 @@ const App: React.FC = () => {
       chatOptions: {
         systemPrompt: systemPrompt.trim() || DEFAULT_SYSTEM_PROMPT,
       },
+      tools: [{ definition: randomIntTool, handler: randomIntHandler }],
       debug: true,
     };
 
@@ -216,6 +249,14 @@ const App: React.FC = () => {
     instance.on(AITuberOnAirCoreEvent.ERROR, (error: any) => {
       console.error('An error occurred:', error);
       alert(`An error occurred:: ${error}`);
+    });
+
+    instance.on(AITuberOnAirCoreEvent.TOOL_USE, (data: any) => {
+      console.log('Tool use:', data);
+    });
+
+    instance.on(AITuberOnAirCoreEvent.TOOL_RESULT, (data: any) => {
+      console.log('Tool result:', data);
     });
   };
 
