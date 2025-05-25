@@ -19,7 +19,10 @@ import {
   MODEL_CLAUDE_3_5_HAIKU,
   MODEL_CLAUDE_3_5_SONNET,
   MODEL_CLAUDE_3_7_SONNET,
+  MODEL_CLAUDE_4_SONNET,
+  MODEL_CLAUDE_4_OPUS,
   ToolDefinition,
+  MCPServerConfig,
 } from '@aituber-onair/core';
 
 // when use MCP, uncomment the following line
@@ -62,6 +65,8 @@ const claudeModels = [
   MODEL_CLAUDE_3_5_HAIKU,
   MODEL_CLAUDE_3_5_SONNET,
   MODEL_CLAUDE_3_7_SONNET,
+  MODEL_CLAUDE_4_SONNET,
+  MODEL_CLAUDE_4_OPUS,
 ];
 
 // tool definition
@@ -92,6 +97,16 @@ const randomIntHandler = async ({ max }: { max: number }) => {
 const randomIntHandler = createMcpToolHandler<{ max: number }>('randomInt');
 */
 
+// DeepWiki MCP server
+const deepwikiMcpServer: MCPServerConfig = {
+  type: 'url',
+  url: 'https://mcp.deepwiki.com/sse',
+  name: 'deepwiki',
+};
+
+// MCP server config
+const mcpServers: MCPServerConfig[] = [deepwikiMcpServer];
+
 const App: React.FC = () => {
   const idCounter = useRef(0);
   const nextId = () => (++idCounter.current).toString();
@@ -110,6 +125,9 @@ const App: React.FC = () => {
     DEFAULT_CHAT_PROVIDER,
   );
   const [model, setModel] = useState<string>(DEFAULT_MODEL);
+
+  // DeepWiki MCP enable flag
+  const [enableDeepWikiMcp, setEnableDeepWikiMcp] = useState<boolean>(false);
 
   // chat messages state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -181,6 +199,7 @@ const App: React.FC = () => {
         systemPrompt: systemPrompt.trim() || DEFAULT_SYSTEM_PROMPT,
       },
       tools: [{ definition: randomIntTool, handler: randomIntHandler }],
+      mcpServers: enableDeepWikiMcp ? mcpServers : [],
       debug: true,
     };
 
@@ -548,6 +567,19 @@ const App: React.FC = () => {
                   </option>
                 ))}
             </select>
+
+            <div style={{ marginTop: '8px' }}>
+              <label htmlFor="enableDeepWikiMcp">
+                DeepWiki MCPを有効にする:
+              </label>
+              <input
+                type="checkbox"
+                id="enableDeepWikiMcp"
+                checked={enableDeepWikiMcp}
+                onChange={(e) => setEnableDeepWikiMcp(e.target.checked)}
+                style={{ marginLeft: '8px' }}
+              />
+            </div>
 
             <div style={{ marginTop: '16px', textAlign: 'right' }}>
               <button
